@@ -1,0 +1,11 @@
+[package]
+name = "oid-str"
+version = "0.1.0"
+authors = ["Vladyslav Katasonov <cpud47@gmail.com>"]
+edition = "2018"
+
+[features]
+alloc = []
+default = ["alloc"]
+
+[dependencies]
