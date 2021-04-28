@@ -1,6 +1,6 @@
-use crate::{alloc::vec::Vec, Arc, RootOid, ARC_LEN};
+use alloc::vec::Vec;
 
-use crate::{encode::write_b128, AbsoluteOid, RelativeOid};
+use crate::{encode::write_b128, AbsoluteOid, Arc, RelativeOid, RootOid, ARC_LEN};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct RelativeOidVec {
@@ -17,15 +17,13 @@ impl core::ops::Deref for RelativeOidVec {
     type Target = RelativeOid;
 
     fn deref(&self) -> &Self::Target {
-        // SAFETY: we only store valid RelativeOid bytes
-        unsafe { RelativeOid::from_bytes_unchecked(self.bytes.as_slice()) }
+        self.as_oid()
     }
 }
 
 impl core::ops::DerefMut for RelativeOidVec {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        // SAFETY: we only store valid RelativeOid bytes
-        unsafe { RelativeOid::from_mut_bytes_unchecked(self.bytes.as_mut_slice()) }
+        self.as_mut_oid()
     }
 }
 
@@ -38,6 +36,16 @@ impl RelativeOidVec {
 
     pub fn into_bytes(self) -> Vec<u8> {
         self.bytes
+    }
+
+    pub fn as_oid(&self) -> &RelativeOid {
+        // SAFETY: we only store valid RelativeOid bytes
+        unsafe { RelativeOid::from_bytes_unchecked(self.bytes.as_slice()) }
+    }
+
+    pub fn as_mut_oid(&mut self) -> &mut RelativeOid {
+        // SAFETY: we only store valid RelativeOid bytes
+        unsafe { RelativeOid::from_mut_bytes_unchecked(self.bytes.as_mut_slice()) }
     }
 
     pub fn push(&mut self, arc: Arc) {
@@ -60,15 +68,13 @@ impl core::ops::Deref for AbsoluteOidVec {
     type Target = AbsoluteOid;
 
     fn deref(&self) -> &Self::Target {
-        // SAFETY: we only store valid contents
-        unsafe { AbsoluteOid::from_bytes_unchecked(self.bytes.as_slice()) }
+        self.as_oid()
     }
 }
 
 impl core::ops::DerefMut for AbsoluteOidVec {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        // SAFETY: we only store valid contents
-        unsafe { AbsoluteOid::from_mut_bytes_unchecked(self.bytes.as_mut_slice()) }
+        self.as_mut_oid()
     }
 }
 
@@ -85,6 +91,16 @@ impl AbsoluteOidVec {
 
     pub fn into_bytes(self) -> Vec<u8> {
         self.bytes
+    }
+
+    pub fn as_oid(&self) -> &AbsoluteOid {
+        // SAFETY: we only store valid contents
+        unsafe { AbsoluteOid::from_bytes_unchecked(self.bytes.as_slice()) }
+    }
+
+    pub fn as_mut_oid(&mut self) -> &mut AbsoluteOid {
+        // SAFETY: we only store valid contents
+        unsafe { AbsoluteOid::from_mut_bytes_unchecked(self.bytes.as_mut_slice()) }
     }
 
     pub fn push(&mut self, arc: Arc) {

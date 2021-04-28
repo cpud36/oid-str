@@ -80,6 +80,7 @@ mod encode;
 mod owned;
 mod static_ref;
 mod str;
+mod reference_conversions;
 
 pub use self::str::{parse_absolute, parse_relative, OidParsingError};
 pub use borrowed::{
