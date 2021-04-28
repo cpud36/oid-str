@@ -9,6 +9,7 @@ mod iter;
 mod encode;
 #[cfg(feature = "alloc")]
 mod owned;
+mod static_ref;
 mod str;
 
 pub use self::str::{parse_absolute, parse_relative, OidParsingError};
@@ -21,6 +22,7 @@ pub use iter::{AbsoluteArcs, RelativeArcs, RootArcs};
 #[cfg(feature = "alloc")]
 pub use owned::{AbsoluteOidVec, RelativeOidVec};
 pub use root::{Arc0, Arc1};
+pub use static_ref::{StaticAbsoluteOid, StaticRelativeOid};
 
 pub type Arc = u32;
 pub type Position = u16;
