@@ -2,7 +2,17 @@
 name = "oid-str"
 version = "0.1.0"
 authors = ["Vladyslav Katasonov <cpud47@gmail.com>"]
+repository = "https://github.com/cpud36/oid-str"
+keywords = ["oid", "asn1"]
+categories = ["encoding", "no-std"]
+license = "MIT OR Apache-2.0"
+description = "Owning and borrowed types(similar to String/str) for Object Identifiers encoded in DER format."
 edition = "2018"
+
+include = [
+    "src/*",
+    "Cargo.toml",
+]
 
 [features]
 alloc = []
