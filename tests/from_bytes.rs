@@ -13,6 +13,13 @@ fn root_cannot_be_build_from_too_large_bytes_255() {
 }
 
 #[test]
+fn relative_oid_with_x80_byte_in_the_middle() {
+    let bytes = b"\x81\x80\x00";
+    let oid = RelativeOid::from_bytes(bytes).unwrap();
+    assert_eq!(oid.to_string(), ".16384");
+}
+
+#[test]
 fn relative_oid_b128_error_overflow() {
     let bytes = b"\x90\x80\x80\x80\x00";
     let result = RelativeOid::from_bytes(bytes);

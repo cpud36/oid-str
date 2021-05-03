@@ -256,19 +256,19 @@ fn slice_error_fail(oid: &RelativeOid, start: usize, end: usize) -> ! {
     let arc = oid[arc_start..].arcs().next().unwrap();
     let arc_range = arc_start..arc_start + b128_len(arc);
     panic!(
-        "byte index {} is not an arc boundary; it is inside {:?} (bytes {:?}) of `{}`{}",
+        "byte index {} is not an arc boundary; it is inside of an arc {:?} (bytes {:?}) in `{}`{}",
         index, arc, arc_range, oid_trunc, ellipsis
     );
 }
 
 fn truncate_to_arc_boundary(oid: &RelativeOid, mut max: usize) -> (bool, &RelativeOid) {
-    if max <= oid.len() {
-        (true, oid)
+    if oid.len() <= max {
+        (false, oid)
     } else {
         while !oid.is_arc_boundary(max) {
             max -= 1;
         }
-        (false, &oid[..max])
+        (true, &oid[..max])
     }
 }
 
