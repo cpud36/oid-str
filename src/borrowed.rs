@@ -115,10 +115,6 @@ impl RelativeOid {
     /// # Safety
     /// byte sequence must ensure invariants of RelativeOid are satisfied
     pub unsafe fn from_mut_bytes_unchecked(bytes: &mut [u8]) -> &mut RelativeOid {
-        // Safe, because Oid is just a type Wrapper of [u8] and repr(transparent)
-        // OidCast::<&[u8], &Self> { from: data }.to
-        // unsafe { &*(data as *const [u8] as *const Oid) }
-
         // SAFETY: Casting to RelativeOid is safe because its internal representation
         // is a [u8] too and it is repr(transparent).
         // Dereferencing the obtained pointer is safe because it comes from a
@@ -129,10 +125,12 @@ impl RelativeOid {
 
     /// Bytes of BER-encoded oid
     ///
-    /// It is correct to append these bytes to both `RelativeOid` and `AbsoluteOid`
+    /// It is correct to append these bytes to both [`RelativeOid`] and [`AbsoluteOid`]
     ///
-    /// `RelativeOid` can be reconstructed with `RelativeOid::from_mut_bytes_unchecked`
-    pub fn as_mut_bytes(&mut self) -> &mut [u8] {
+    /// [`RelativeOid`] can be reconstructed with `RelativeOid::from_mut_bytes_unchecked`
+    /// # Safety
+    /// The caller must ensure that invariants of [`RelativeOid`] are restored before the borrow ends and [`RelativeOid`] is used.
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
         &mut self.0
     }
 
@@ -213,12 +211,7 @@ impl AbsoluteOid {
     ///
     /// `AbsoluteOid` can be reconstructed with `AbsoluteOid::from_bytes_unchecked`
     pub fn as_bytes(&self) -> &[u8] {
-        // SAFETY: Casting RelativeOid to [u8] is safe because its internal representation
-        // is a [u8] too and it is repr(transparent).
-        // Dereferencing the obtained pointer is safe because it comes from a
-        // reference. Making a reference is then safe because its lifetime
-        // is bound by the lifetime of the given `self`.
-        unsafe { &*(self as *const AbsoluteOid as *const [u8]) }
+        &self.0
     }
 
     /// Cast AbsoluteOid from bytes
@@ -227,10 +220,6 @@ impl AbsoluteOid {
     /// # Safety
     /// byte sequence must ensure invariants of AbsoluteOid are satisfied
     pub unsafe fn from_mut_bytes_unchecked(bytes: &mut [u8]) -> &mut Self {
-        // Safe, because Oid is just a type Wrapper of [u8] and repr(transparent)
-        // OidCast::<&[u8], &Self> { from: data }.to
-        // unsafe { &*(data as *const [u8] as *const Oid) }
-
         // SAFETY: Casting to AbsoluteOid is safe because its internal representation
         // is a [u8] too and it is repr(transparent).
         // Dereferencing the obtained pointer is safe because it comes from a
@@ -241,14 +230,14 @@ impl AbsoluteOid {
 
     /// Bytes of BER-encoded oid
     ///
-    /// `AbsoluteOid` can be reconstructed with `AbsoluteOid::from_mut_bytes_unchecked`
-    pub fn as_mut_bytes(&mut self) -> &mut [u8] {
-        // SAFETY: Casting AbsoluteOid to [u8] is safe because its internal representation
-        // is a [u8] too and it is repr(transparent).
-        // Dereferencing the obtained pointer is safe because it comes from a
-        // reference. Making a reference is then safe because its lifetime
-        // is bound by the lifetime of the given `self`.
-        unsafe { &mut *(self as *mut AbsoluteOid as *mut [u8]) }
+    /// [`AbsoluteOid`] can be reconstructed with [`from_mut_bytes_unchecked`]
+    /// 
+    /// [`from_mut_bytes_unchecked`]: AbsoluteOid::from_mut_bytes_unchecked
+    /// 
+    /// # Safety
+    /// The caller must ensure that invariants of [`AbsoluteOid`] are restored before the borrow ends and [`AbsoluteOid`] is used.
+    pub unsafe fn as_mut_bytes(&mut self) -> &mut [u8] {
+        &mut self.0
     }
 
     pub(crate) fn check_bytes(bytes: &[u8]) -> Result<(), OidDecodingError> {
@@ -298,7 +287,7 @@ impl AbsoluteOid {
     /// All arcs except the first two(the [RootOid])
     pub fn tail(&self) -> &RelativeOid {
         if cfg!(debug_assertions) {
-            RelativeOid::from_bytes(&self.as_bytes()[1..]).unwrap();
+            RelativeOid::check_bytes(&self.as_bytes()[1..]).unwrap();
         }
         // SAFETY: `RootOid` always takes exactly 1 byte, so the rest is a valid `RelativeOid`
         unsafe { RelativeOid::from_bytes_unchecked(self.as_bytes().get_unchecked(1..)) }
@@ -307,7 +296,7 @@ impl AbsoluteOid {
     /// All arcs except the first two(the [RootOid])
     pub fn tail_mut(&mut self) -> &mut RelativeOid {
         if cfg!(debug_assertions) {
-            RelativeOid::from_mut_bytes(&mut self.as_mut_bytes()[1..]).unwrap();
+            RelativeOid::check_bytes(&self.as_bytes()[1..]).unwrap();
         }
         // SAFETY: `RootOid` always takes exactly 1 byte, so the rest is a valid `RelativeOid`
         unsafe { RelativeOid::from_mut_bytes_unchecked(self.as_mut_bytes().get_unchecked_mut(1..)) }
