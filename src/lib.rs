@@ -82,6 +82,7 @@ mod static_ref;
 mod str;
 mod reference_conversions;
 mod index;
+mod ops;
 
 pub use self::str::{parse_absolute, parse_relative, OidParsingError};
 pub use borrowed::{

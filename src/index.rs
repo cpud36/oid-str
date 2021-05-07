@@ -1,6 +1,6 @@
-use core::ops::{Index, IndexMut, RangeBounds};
+use core::{mem::size_of, ops::{Index, IndexMut, RangeBounds}};
 
-use crate::{AbsoluteOid, Arc, RelativeOid};
+use crate::{AbsoluteOid, Arc, RelativeOid, RootOid};
 
 /// [`AbsoluteOid`] is inconvenient for slicing.
 /// First byte of [`AbsoluteOid`] has different meaning from the rest.
@@ -16,6 +16,67 @@ impl AbsoluteOid {
     pub fn len(&self) -> usize {
         self.as_bytes().len()
     }
+
+    pub fn as_ptr(&self) -> *const u8 {
+        self.as_bytes().as_ptr()
+    }
+
+    /// Replace tail with a shorter one
+    /// 
+    /// It can be used to apply modifications to the tail
+    /// 
+    /// See also [`with_tail_unchecked`]
+    /// 
+    /// [`with_tail_unchecked`]: AbsoluteOid::with_tail_unchecked
+    /// 
+    /// # Examples
+    /// ```
+    /// # use oid_str::AbsoluteOid;
+    /// 
+    /// let oid = AbsoluteOid::from_bytes(b"\x2b\x01\x02\x03").unwrap();
+    /// assert_eq!(oid.to_string(), "1.3.1.2.3");
+    /// let tail = oid.tail();
+    /// 
+    /// let new = oid.with_tail(&tail[..1]);
+    /// assert_eq!(new.to_string(), "1.3.1");
+    /// ```
+    /// 
+    /// # Panics
+    /// New `tail` must be a prefix of [`self.tail()`] (as byte slices).
+    /// If this is not the case the method panics
+    /// 
+    /// [`self.tail()`]: AbsoluteOid::tail
+    pub fn with_tail<'a>(&'a self, tail: &'a RelativeOid) -> &'a AbsoluteOid {
+        let self_range = self.tail().as_bytes().as_ptr_range();
+        let tail_range = tail.as_bytes().as_ptr_range();
+
+        if self_range.start == tail_range.start && tail_range.end <= self_range.end {
+            unsafe { self.with_tail_unchecked(tail) }
+        } else {
+            if self_range.start != tail_range.start {
+                panic!("replacement tail oid does not start at the same place as the original oid orig != new ({:?} != {:?})", self_range.start, tail_range.start);
+            } else {
+                panic!("replacement tail is longer than original orig < new ({} < {})", self.tail().len(), tail.len());
+            }
+        }
+    }
+
+    /// Replace a tail with a shorter one
+    /// 
+    /// # Safety
+    /// The caller must ensure that `tail` as bytes slice is a prefix of `self.tail()`.
+    pub unsafe fn with_tail_unchecked<'a>(&'a self, tail: &'a RelativeOid) -> &'a AbsoluteOid {
+        debug_assert_eq!(size_of::<RootOid>(), 1);
+        // additional bytes for root
+        let len = tail.len() + 1;
+
+        debug_assert_eq!(self.tail().as_ptr(), tail.as_ptr());
+        debug_assert!(len <= self.len());
+
+        // SAFETY: len is valid because the caller MUST ensure `tail` is within self
+        let bytes = self.as_bytes().get_unchecked(..len);
+        AbsoluteOid::from_bytes_unchecked(bytes)
+    }
 }
 
 impl RelativeOid {
@@ -26,6 +87,10 @@ impl RelativeOid {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    pub fn as_ptr(&self) -> *const u8 {
+        self.as_bytes().as_ptr()
     }
 
     /// Check if there is there is a boundary between two arcs at `index`
@@ -217,7 +282,7 @@ impl<R: RangeBounds<usize>> IndexMut<R> for RelativeOid {
 #[inline(never)]
 #[cold]
 #[track_caller]
-fn slice_error_fail(oid: &RelativeOid, start: usize, end: usize) -> ! {
+pub(crate) fn slice_error_fail(oid: &RelativeOid, start: usize, end: usize) -> ! {
     const MAX_DISPLAY_LENGTH: usize = 256;
     let (truncated, oid_trunc) = truncate_to_arc_boundary(oid, MAX_DISPLAY_LENGTH);
     let ellipsis = if truncated { "[...]" } else { "" };

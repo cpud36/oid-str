@@ -1,3 +1,5 @@
+use core::mem::size_of;
+
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 
@@ -286,6 +288,7 @@ impl AbsoluteOid {
 
     /// All arcs except the first two(the [RootOid])
     pub fn tail(&self) -> &RelativeOid {
+        debug_assert_eq!(size_of::<RootOid>(), 1);
         if cfg!(debug_assertions) {
             RelativeOid::check_bytes(&self.as_bytes()[1..]).unwrap();
         }
@@ -295,6 +298,7 @@ impl AbsoluteOid {
 
     /// All arcs except the first two(the [RootOid])
     pub fn tail_mut(&mut self) -> &mut RelativeOid {
+        debug_assert_eq!(size_of::<RootOid>(), 1);
         if cfg!(debug_assertions) {
             RelativeOid::check_bytes(&self.as_bytes()[1..]).unwrap();
         }

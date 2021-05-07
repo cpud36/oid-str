@@ -6,6 +6,7 @@ mod encode;
 mod iter;
 mod display;
 mod index;
+mod ops;
 
 #[test]
 fn test_vec_from_root() {

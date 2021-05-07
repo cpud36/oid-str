@@ -1,4 +1,4 @@
-use oid_str::RelativeOid;
+use oid_str::{AbsoluteOid, RelativeOid};
 
 #[test]
 fn arc_boundary_at_start() {
@@ -203,4 +203,57 @@ fn index_long_oid_panic_exact() {
     assert_eq!(buffer.len(), 256);
     let oid = RelativeOid::from_bytes(&buffer).unwrap();
     let _ = &oid[1..];
+}
+
+#[test]
+fn replace_tail_of_absolute_oid() {
+    let oid = AbsoluteOid::from_bytes(b"\x2b\x01\x02\x03").unwrap();
+    let tail = &oid.tail()[..2];
+
+    let sliced = oid.with_tail(tail);
+    assert_eq!(sliced.to_string(), "1.3.1.2");
+}
+
+#[test]
+fn replace_tail_of_absolute_oid_to_the_end() {
+    let oid = AbsoluteOid::from_bytes(b"\x2b\x01\x02\x03").unwrap();
+    let tail = &oid.tail();
+
+    let sliced = oid.with_tail(tail);
+    assert_eq!(sliced.to_string(), "1.3.1.2.3");
+}
+
+
+#[test]
+#[should_panic = "replacement tail oid does not start at the same place as the original oid orig != new"]
+fn replace_tail_of_absolute_oid_invalid_start() {
+    let oid = AbsoluteOid::from_bytes(b"\x2b\x01\x02\x03").unwrap();
+    let tail = &oid.tail()[1..2];
+
+    oid.with_tail(tail);
+}
+
+#[test]
+#[should_panic = "replacement tail is longer than original orig < new (1 < 2)"]
+fn replace_tail_of_absolute_oid_invalid_end() {
+    let big_oid = AbsoluteOid::from_bytes(b"\x2b\x01\x02\x03\x04").unwrap();
+    
+    let oid = big_oid.with_tail(&big_oid.tail()[..1]);
+    assert_eq!(oid.to_string(), "1.3.1");
+
+    let tail = &big_oid.tail()[..2];
+    oid.with_tail(tail);
+}
+
+
+#[test]
+#[should_panic = "replacement tail oid does not start at the same place as the original oid orig != new"]
+fn replace_tail_of_absolute_oid_invalid_slice() {
+    let oid_buffer = *b"\x2b\x01\x02\x03";
+    let oid = AbsoluteOid::from_bytes(&oid_buffer).unwrap();
+    
+    let tail_buffer = *b"\x01\x02\x03";
+    let tail = RelativeOid::from_bytes(&tail_buffer).unwrap();
+
+    oid.with_tail(tail);
 }
